@@ -1,2 +1,5 @@
 *.npy
 *.pickle
+
+a3/student/results
+a3/student/data

@@ -1,3 +1,4 @@
+from os import truncate
 import random
 import torch
 from torch.utils.data import Dataset
@@ -168,7 +169,37 @@ class CharCorruptionDataset(Dataset):
 
     def __getitem__(self, idx):
         # TODO [part e]: see spec above
-        raise NotImplementedError
+        
+        #Step 0
+        data_seq = self.data[idx]
+        length = random.randint(4, self.block_size * 7/8)
+
+        #Step 1
+        truncated_document = data_seq[:length]
+
+        #Step 2
+        length_masked = round(len(truncated_document) / 4) + random.randint(-round(len(truncated_document) / 4),  round(len(truncated_document) / 4))
+        length_nonmasked = random.randint(0, length_masked)
+        
+        prefix = truncated_document[:length_nonmasked]
+        masked_content = truncated_document[length_nonmasked: length_nonmasked + length_masked]
+        suffix = truncated_document[length_nonmasked + length_masked:]
+
+        #Step 3
+        masked_total = prefix + self.MASK_CHAR + suffix + self.MASK_CHAR + masked_content 
+        pads = self.PAD_CHAR * (self.block_size - len(masked_total))
+        masked_total += pads
+
+        #Step 4
+        input_str = masked_total[:-1]
+        output_str = masked_total[1:]
+
+        #Step 5
+        x = torch.tensor([*map(self.stoi.get, input_str)], dtype= torch.long)
+        y = torch.tensor([*map(self.stoi.get, output_str)], dtype= torch.long)
+
+        return x, y
+
 
 """
 Code under here is strictly for your debugging purposes; feel free to modify
